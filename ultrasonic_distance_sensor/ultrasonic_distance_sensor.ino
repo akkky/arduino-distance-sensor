@@ -10,15 +10,16 @@ void setup() {
 }
 
 void loop() {
-    int interval = 0;
+    unsigned long interval = 0;
     double distance = 0;
+    
     // トリガーのパルスを送信
     digitalWrite(TRIG_PIN, HIGH);
     delayMicroseconds(TRIG_DELAY);
     digitalWrite(TRIG_PIN, LOW);
 
     interval = pulseIn(ECHO_PIN, HIGH);
-    distance = (float)interval * 0.00017;
+    distance = (double)interval * 0.00017;
 
     Serial.print(distance);
     Serial.println(" m");
