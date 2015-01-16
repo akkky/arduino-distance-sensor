@@ -1,7 +1,9 @@
+#include <stdio.h>
+
 // 超音波センサー
 #define TRIG_PIN 2
 #define ECHO_PIN 3
-#define TRIG_DELAY 100
+#define TRIG_DELAY 10
 #define US_SAMPLING_COUNT 20
 // 赤外線センサー
 #define IR_INPUT_PIN 0
@@ -39,20 +41,17 @@ void loop() {
   int ir_distance = 0;
   int water_level = 0;
   
-  ultrasonic_distance += get_ultrasonic_distance();
+  ultrasonic_distance = get_ultrasonic_distance();
   ir_distance = get_ir_distance();
   water_level = get_water_level();
   
-  Serial.print(ir_distance);
-  Serial.print(",");
-  Serial.print(ultrasonic_distance);
-  Serial.print(",");
-  Serial.println(water_level);
+  char output[13];
+  snprintf(output, sizeof(output), "%04d%04d%04d", ir_distance, ultrasonic_distance, water_level);
+  Serial.println(output);
   
-//  output_led(6 - ir_distance / 133);
-  output_led(6 - ultrasonic_distance / 100);
+  output_led(6 - ultrasonic_distance / 70);
   
-  delay(500);
+  delay(100);
 }
 
 // LED に出力
@@ -83,8 +82,10 @@ int get_ultrasonic_distance() {
     delayMicroseconds(TRIG_DELAY);
     digitalWrite(TRIG_PIN, LOW);
 
-    interval = pulseIn(ECHO_PIN, HIGH);
-    distance_total += (int)((double)interval * 0.17);
+    interval = pulseIn(ECHO_PIN, HIGH, 2000000);
+    distance_total += (int)((double)interval * 0.17325);
+    
+    delay(1);
   }
   
   return (int)(distance_total / US_SAMPLING_COUNT);
