@@ -1,19 +1,22 @@
-// ultrasonic distance sensor
+// 超音波センサー
 #define TRIG_PIN 2
 #define ECHO_PIN 3
 #define TRIG_DELAY 100
-// IR distance censor
+#define US_SAMPLING_COUNT 20
+// 赤外線センサー
 #define IR_INPUT_PIN 0
-#define SAMPLING_COUNT 100
+#define IR_SAMPLING_COUNT 100
 // LED
 #define LED1_PIN 8
 #define LED2_PIN 9
 #define LED3_PIN 10
 #define LED4_PIN 11
 #define LED5_PIN 12
+#define LED6_PIN 13
 
+// 初期化
 void setup() {
-  // Ultrasonic
+  // 超音波センサー
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
   // LED
@@ -22,33 +25,34 @@ void setup() {
   pinMode(LED3_PIN, OUTPUT);
   pinMode(LED4_PIN, OUTPUT);
   pinMode(LED5_PIN, OUTPUT);
+  pinMode(LED6_PIN, OUTPUT);
   
   Serial.begin(9600);
 }
 
+// メインループ
 void loop() {
-  double ultrasonic_distance = 0;
+  int ultrasonic_distance = 0;
   int ir_distance = 0;
   
-  ultrasonic_distance = get_ultrasonic_distance();
+  ultrasonic_distance += get_ultrasonic_distance();
   ir_distance = get_ir_distance();
   
-  Serial.print("Ultrasonic : ");
-  Serial.print(ultrasonic_distance);
-  Serial.println(" m");
-  Serial.print("IR : ");
   Serial.print(ir_distance);
-  Serial.println(" mm");
+  Serial.print(",");
+  Serial.println(ultrasonic_distance);
   
-  output_led(5 - ir_distance / 160);
+//  output_led(6 - ir_distance / 133);
+  output_led(6 - ultrasonic_distance / 100);
   
   delay(500);
 }
 
+// LED に出力
 void output_led(int level) {
-  int led[5] = {LOW, LOW, LOW, LOW, LOW};
+  int led[6] = {LOW, LOW, LOW, LOW, LOW};
   int i;
-  for(i = 0; i < level && i < 5; i++) {
+  for(i = 0; i < level && i < 6; i++) {
     led[i] = HIGH;
   }
   
@@ -57,23 +61,29 @@ void output_led(int level) {
   digitalWrite(LED3_PIN, led[2]);
   digitalWrite(LED4_PIN, led[3]);
   digitalWrite(LED5_PIN, led[4]);
-  
-  Serial.print("Level : ");
-  Serial.println(level);
+  digitalWrite(LED6_PIN, led[5]);
 }
 
-double get_ultrasonic_distance() {
-    unsigned long interval = 0;
-
+// 超音波センサーから距離を取得(mm)
+int get_ultrasonic_distance() {
+  unsigned long distance_total = 0;
+  unsigned long interval = 0;
+  int i = 0;
+  
+  for(i = 0; i < US_SAMPLING_COUNT; i++) {
     // トリガーのパルスを送信
     digitalWrite(TRIG_PIN, HIGH);
     delayMicroseconds(TRIG_DELAY);
     digitalWrite(TRIG_PIN, LOW);
 
     interval = pulseIn(ECHO_PIN, HIGH);
-    return (double)interval * 0.00017;
+    distance_total += (int)((double)interval * 0.17);
+  }
+  
+  return (int)(distance_total / US_SAMPLING_COUNT);
 }
 
+// 赤外線センサーから距離を取得
 int get_ir_distance() {
   int ans;
   float volts;
@@ -83,23 +93,26 @@ int get_ir_distance() {
   return volts_to_mm(volts);
 }
 
+// アナログポートからの入力値の平均値を取得
 int get_serial_average(int pin_no) {
   long sum;
   int i;
 
   sum = 0;
 
-  for(i = 0; i < SAMPLING_COUNT; i++) {
+  for(i = 0; i < IR_SAMPLING_COUNT; i++) {
     sum = sum + analogRead(pin_no);
   }
 
-  return sum / SAMPLING_COUNT;
+  return sum / IR_SAMPLING_COUNT;
 }
 
+// アナログポートからの入力値を電圧に変換
 float analog_to_volts(int analog_value) {
   return (float)analog_value * 5.0 / 1024.0;
 }
 
+// 電圧から距離に変換
 int volts_to_mm(float volts) {
   int mm;
   if(volts > 3.0) {
@@ -153,6 +166,7 @@ int volts_to_mm(float volts) {
   return -1;
 }
 
+// 電圧から距離を計算
 int calc_volts_to_mm(float volts, float volts_max, float volts_min, int mm_max, int mm_min) {
   float temp;
   if(volts_max >= volts && volts > volts_min) {
