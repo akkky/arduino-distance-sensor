@@ -6,6 +6,8 @@
 // 赤外線センサー
 #define IR_INPUT_PIN 0
 #define IR_SAMPLING_COUNT 100
+// 水センサー
+#define WATER_INPUT_PIN 1
 // LED
 #define LED1_PIN 8
 #define LED2_PIN 9
@@ -13,6 +15,7 @@
 #define LED4_PIN 11
 #define LED5_PIN 12
 #define LED6_PIN 13
+
 
 // 初期化
 void setup() {
@@ -34,13 +37,17 @@ void setup() {
 void loop() {
   int ultrasonic_distance = 0;
   int ir_distance = 0;
+  int water_level = 0;
   
   ultrasonic_distance += get_ultrasonic_distance();
   ir_distance = get_ir_distance();
+  water_level = get_water_level();
   
   Serial.print(ir_distance);
   Serial.print(",");
-  Serial.println(ultrasonic_distance);
+  Serial.print(ultrasonic_distance);
+  Serial.print(",");
+  Serial.println(water_level);
   
 //  output_led(6 - ir_distance / 133);
   output_led(6 - ultrasonic_distance / 100);
@@ -178,3 +185,8 @@ int calc_volts_to_mm(float volts, float volts_max, float volts_min, int mm_max, 
   }
 }
 
+// 水センサーの値を取得
+int get_water_level() {
+  int value = analogRead(WATER_INPUT_PIN);
+  return value;
+}
