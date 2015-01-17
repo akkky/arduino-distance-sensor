@@ -47,7 +47,9 @@ void loop() {
   
   char output[13];
   snprintf(output, sizeof(output), "%04d%04d%04d", ir_distance, ultrasonic_distance, water_level);
-  Serial.println(output);
+  char output_with_digit[sizeof(output) + 2];
+  add_check_digit(output_with_digit, output);
+  Serial.println(output_with_digit);
   
   output_led(6 - ultrasonic_distance / 70);
   
@@ -191,3 +193,44 @@ int get_water_level() {
   int value = analogRead(WATER_INPUT_PIN);
   return value;
 }
+
+// チェックディジットを付加します
+void add_check_digit(char added_value[], char value[]) {
+  int len = strlen(value);
+  
+  char digit = calc_check_digit(value);
+  
+  strcpy(added_value, value);
+  
+  added_value[len] = digit;
+  added_value[len + 1] = '\0';
+}
+
+// チェックディジットをチェックします
+boolean check_check_digit(char value[]) {
+  int len = strlen(value);
+  char check_value[len];
+  strncpy(check_value, value, len - 1);
+  check_value[len - 1] = '\0';
+  char digit = calc_check_digit(check_value);
+  return digit == value[len - 1];
+}
+
+// チェックディジットを計算
+char calc_check_digit(char value[]) {
+  int i;
+  int odd = 0;
+  int even = 0;
+  
+  int len = strlen(value);
+  
+  // 奇数桁
+  for(i = 0; i < len; i += 2) {
+    odd += value[i] - '0';
+  }
+  for(i = 1; i < len; i+= 2) {
+    even += value[i] - '0';
+  }
+  return '0' + (10 - ((odd * 3 + even) % 10)) % 10;
+}
+
